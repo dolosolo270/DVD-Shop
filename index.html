@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+k<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -441,11 +441,16 @@
     <script>
         const STORAGE_USER = "ws_user_handle";
         const STORAGE_ROLE = "ws_active_role";
+        const STORAGE_CID = "ws_customer_cid";
 
         function resolveRole() {
             const params = new URLSearchParams(window.location.search);
-            const paramRole = (params.get("role") || params.get("ref") || "").toLowerCase();
+            const cid = (params.get("cid") || "").trim();
+            if (cid) {
+                sessionStorage.setItem(STORAGE_CID, cid);
+            }
 
+            const paramRole = (params.get("role") || params.get("ref") || "").toLowerCase();
             if (paramRole === "customer") {
                 sessionStorage.setItem(STORAGE_ROLE, "customer");
                 return "customer";
@@ -456,6 +461,14 @@
             }
 
             return sessionStorage.getItem(STORAGE_ROLE) || "agent";
+        }
+
+        function syncCustomerLinks() {
+            const cid = sessionStorage.getItem(STORAGE_CID) || "";
+            const query = cid ? `?cid=${encodeURIComponent(cid)}` : "";
+            document.querySelectorAll('a[href^="customers.html"]').forEach((link) => {
+                link.href = `customers.html${query}`;
+            });
         }
 
         function applyRoleVisibility(role) {
@@ -488,12 +501,13 @@
                 role === "customer" ? "Customer Workspace Hub" : "Agent Command Hub";
             document.getElementById("welcome-desc").textContent =
                 role === "customer"
-                    ? "You entered through an invite link. Only customer and support modules are shown."
+                    ? "You entered through a customer link. Open the Customer Portal to view your full profile and case details."
                     : "Agent hub active. Manage customers, funding, support, and system pages as each file is added.";
 
             const inviteUrl = `${window.location.origin}${window.location.pathname}?role=customer`;
             document.getElementById("customer-invite-url").textContent = inviteUrl;
 
+            syncCustomerLinks();
             applyRoleVisibility(role);
 
             document.getElementById("auth-gate").classList.add("hidden");

@@ -93,7 +93,7 @@
         }
 
         .wrap {
-            max-width: 1160px;
+            max-width: 1180px;
             margin: 2rem auto;
             padding: 0 1.5rem;
         }
@@ -174,6 +174,11 @@
             padding-top: 0.5rem;
             border-top: 1px solid var(--border-line);
             margin-top: 0.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .section-label:first-child {
@@ -240,6 +245,43 @@
             color: var(--text-sub);
         }
 
+        .incidents-box {
+            grid-column: 1 / -1;
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            border-radius: 5px;
+            padding: 1rem;
+        }
+
+        .incident-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)) auto;
+            gap: 0.75rem;
+            align-items: end;
+            padding-bottom: 0.85rem;
+            margin-bottom: 0.85rem;
+            border-bottom: 1px dashed var(--border-line);
+        }
+
+        .incident-row:last-of-type {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .incidents-footer {
+            margin-top: 0.9rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
         .actions {
             margin-top: 1.15rem;
             display: flex;
@@ -270,20 +312,36 @@
         }
 
         .btn-sm {
-            padding: 0.4rem 0.7rem;
+            padding: 0.42rem 0.72rem;
             font-size: 0.72rem;
             background: var(--bg-elevated);
             color: var(--text-main);
             border: 1px solid var(--border-line);
             text-decoration: none;
             display: inline-block;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
         }
 
         .btn-sm:hover {
             border-color: var(--accent);
         }
 
-        #form-status {
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.14);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.45);
+        }
+
+        .btn-danger:hover {
+            border-color: var(--err);
+            color: var(--text-main);
+        }
+
+        .status-msg {
             font-family: monospace;
             font-size: 0.8rem;
         }
@@ -344,6 +402,20 @@
             margin-top: 0.15rem;
         }
 
+        .incident-item {
+            font-family: monospace;
+            font-size: 0.73rem;
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            border-radius: 3px;
+            padding: 0.3rem 0.45rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .incident-item:last-child {
+            margin-bottom: 0;
+        }
+
         .mono-cell {
             font-family: monospace;
             font-size: 0.77rem;
@@ -354,7 +426,7 @@
             font-size: 0.73rem;
             color: var(--accent);
             word-break: break-all;
-            max-width: 230px;
+            max-width: 220px;
         }
 
         .row-actions {
@@ -365,7 +437,7 @@
     </style>
 </head>
 <body>
-    <div class="top-strip">Agent Workspace // Customer Intake &amp; Custom Link Deployment</div>
+    <div class="top-strip">Agent Workspace // Agent Profile, Case Intake &amp; Custom Link Deployment</div>
 
     <header>
         <a class="brand" href="index.html">WORKSPACE // HUB</a>
@@ -389,20 +461,64 @@
             </div>
             <div class="badge-row">
                 <span class="pill">AGENT: <strong id="agent-handle">@AGENT</strong></span>
+                <span class="pill">BADGE: <strong id="agent-badge-pill">UNSET</strong></span>
+                <span class="pill">ORG: <strong id="agent-org-pill">UNSET</strong></span>
                 <span class="pill">PROFILES: <strong id="customer-count">0</strong></span>
             </div>
+        </section>
+
+        <!-- AGENT PROFILE EDITOR (EDITABLE ANYTIME) -->
+        <section class="panel" aria-label="Agent Profile Settings">
+            <h2>Agent Credentials &amp; Profile</h2>
+            <p class="panel-sub">
+                Update your age, title, organization, and badge number anytime. Changes save immediately to your workspace session.
+            </p>
+
+            <form id="agent-profile-form" onsubmit="handleSaveAgentProfile(event)">
+                <div class="form-grid">
+                    <div>
+                        <label for="agent-age">Age</label>
+                        <input id="agent-age" class="mono" type="number" min="18" max="120" placeholder="29">
+                    </div>
+
+                    <div>
+                        <label for="agent-title">Title</label>
+                        <input id="agent-title" type="text" placeholder="Senior Field Agent">
+                    </div>
+
+                    <div>
+                        <label for="agent-org">Organization</label>
+                        <input id="agent-org" type="text" placeholder="Node 04 Operations">
+                    </div>
+
+                    <div>
+                        <label for="agent-badge">Badge Number</label>
+                        <input id="agent-badge" class="mono" type="text" placeholder="BDG-0419">
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit">Save Agent Profile</button>
+                    <span id="agent-profile-status" class="status-msg"></span>
+                </div>
+            </form>
         </section>
 
         <!-- CREATE CUSTOMER PROFILE & DEPLOY CUSTOM LINK -->
         <section class="panel" aria-label="Create Customer Profile">
             <h2>Create Customer Profile &amp; Deploy Link</h2>
             <p class="panel-sub">
-                Complete the customer's profile, banking/coverage details, and incident info to generate and deploy their custom link.
+                Enter the case number, customer details, coverage info, and one or more incidents/charges to generate a custom link.
             </p>
 
             <form id="customer-form" onsubmit="handleCreateCustomer(event)">
                 <div class="form-grid">
-                    <div class="section-label">Identity &amp; Contact</div>
+                    <div class="section-label">Case &amp; Identity</div>
+
+                    <div>
+                        <label for="case-number">Case Number *</label>
+                        <input id="case-number" class="mono" type="text" placeholder="CASE-2026-0842 (auto-fills if blank)">
+                    </div>
 
                     <div>
                         <label for="first-name">First Name *</label>
@@ -471,40 +587,32 @@
                     </div>
 
                     <div>
-                        <label for="card-type">Debit or Credit *</label>
-                        <select id="card-type" class="mono" required>
-                            <option value="" disabled selected>Select card type</option>
-                            <option value="Debit">Debit</option>
-                            <option value="Credit">Credit</option>
-                        </select>
-                    </div>
-
-                    <div class="section-label">Incident &amp; Charges</div>
-
-                    <div>
-                        <label for="incident-date">Date of Incident *</label>
-                        <input id="incident-date" class="mono" type="date" required>
-                    </div>
-
-                    <div>
-                        <label for="charge-amount">Amount of Charges (USD) *</label>
-                        <input id="charge-amount" class="mono" type="number" step="0.01" min="0" required placeholder="250.00">
-                    </div>
-
-                    <div>
                         <label for="custom-slug">Custom Link Slug (Optional)</label>
                         <input id="custom-slug" class="mono" type="text" placeholder="e.g. jt-case-04">
                     </div>
 
+                    <div class="section-label">
+                        <span>Incidents &amp; Charges</span>
+                        <button class="btn-sm" type="button" onclick="addIncidentRow()">+ Add Incident / Charge</button>
+                    </div>
+
+                    <div class="incidents-box">
+                        <div id="incidents-list"></div>
+                        <div class="incidents-footer">
+                            <div>INCIDENT COUNT: <strong id="incident-count-label" style="color: var(--accent);">1</strong></div>
+                            <div>TOTAL CHARGES: <strong id="total-charges-label" style="color: var(--accent);">$0.00</strong></div>
+                        </div>
+                    </div>
+
                     <div class="field-full">
                         <label for="extra-notes">Additional Details / Notes</label>
-                        <textarea id="extra-notes" placeholder="Merchant details, reference numbers, or extra notes..."></textarea>
+                        <textarea id="extra-notes" placeholder="Case notes, merchant details, or extra context..."></textarea>
                     </div>
                 </div>
 
                 <div class="actions">
                     <button class="btn btn-primary" type="submit">Create Profile &amp; Deploy Link</button>
-                    <span id="form-status"></span>
+                    <span id="form-status" class="status-msg"></span>
                 </div>
             </form>
 
@@ -514,8 +622,8 @@
                     <span id="deployed-url" class="deployed-link"></span>
                 </div>
                 <div class="row-actions">
-                    <button class="btn btn-sm" type="button" onclick="copyText(document.getElementById('deployed-url').textContent)">Copy Link</button>
-                    <a id="deployed-open" class="btn btn-sm" href="#" target="_blank" rel="noopener">Open Link</a>
+                    <button class="btn-sm" type="button" onclick="copyText(document.getElementById('deployed-url').textContent)">Copy Link</button>
+                    <a id="deployed-open" class="btn-sm" href="#" target="_blank" rel="noopener">Open Link</a>
                 </div>
             </div>
         </section>
@@ -524,18 +632,18 @@
         <section class="panel" aria-label="Deployed Customer Profiles">
             <h2>Deployed Customer Profiles</h2>
             <p class="panel-sub">
-                Profiles created in this workspace along with their custom customer links.
+                Profiles created in this workspace along with their case numbers, multiple incidents/charges, and custom links.
             </p>
 
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th>Customer</th>
+                            <th>Case &amp; Customer</th>
                             <th>Contact &amp; Address</th>
                             <th>SSN / DOB / MMN</th>
-                            <th>Bank &amp; $250k Coverage</th>
-                            <th>Payment, Incident &amp; Charges</th>
+                            <th>Bank, Coverage &amp; Payment</th>
+                            <th>Incidents &amp; Charges</th>
                             <th>Custom Link</th>
                             <th>Actions</th>
                         </tr>
@@ -555,7 +663,119 @@
         const STORAGE_USER = "ws_user_handle";
         const STORAGE_ROLE = "ws_active_role";
         const STORAGE_CUSTOMERS = "ws_agent_customers";
+        const STORAGE_AGENT_PROFILE = "ws_agent_profile";
         const MAX_INSURED_CAP = 250000;
+        let incidentSeq = 0;
+
+        function getAgentProfile() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_AGENT_PROFILE) || "{}");
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function renderAgentProfileUI() {
+            const prof = getAgentProfile();
+            document.getElementById("agent-age").value = prof.age || "";
+            document.getElementById("agent-title").value = prof.title || "";
+            document.getElementById("agent-org").value = prof.org || "";
+            document.getElementById("agent-badge").value = prof.badge || "";
+
+            document.getElementById("agent-badge-pill").textContent = (prof.badge || "UNSET").toUpperCase();
+            document.getElementById("agent-org-pill").textContent = (prof.org || "UNSET").toUpperCase();
+        }
+
+        function handleSaveAgentProfile(event) {
+            event.preventDefault();
+            const statusEl = document.getElementById("agent-profile-status");
+            const profile = {
+                age: document.getElementById("agent-age").value.trim(),
+                title: document.getElementById("agent-title").value.trim(),
+                org: document.getElementById("agent-org").value.trim(),
+                badge: document.getElementById("agent-badge").value.trim()
+            };
+
+            localStorage.setItem(STORAGE_AGENT_PROFILE, JSON.stringify(profile));
+            renderAgentProfileUI();
+
+            statusEl.style.color = "var(--ok)";
+            statusEl.textContent = "Agent profile saved.";
+        }
+
+        function addIncidentRow(data = {}) {
+            incidentSeq += 1;
+            const rowId = `inc-row-${incidentSeq}`;
+            const container = document.getElementById("incidents-list");
+            const row = document.createElement("div");
+            row.className = "incident-row";
+            row.id = rowId;
+
+            const cardType = data.cardType || "";
+            row.innerHTML = `
+                <div>
+                    <label>Date of Incident *</label>
+                    <input class="mono inc-date" type="date" required value="${escapeHtml(data.incidentDate || "")}">
+                </div>
+                <div>
+                    <label>Debit or Credit *</label>
+                    <select class="mono inc-card" required>
+                        <option value="" disabled ${cardType ? "" : "selected"}>Select card type</option>
+                        <option value="Debit" ${cardType === "Debit" ? "selected" : ""}>Debit</option>
+                        <option value="Credit" ${cardType === "Credit" ? "selected" : ""}>Credit</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Charge Amount (USD) *</label>
+                    <input class="mono inc-amount" type="number" step="0.01" min="0" required placeholder="0.00" value="${escapeHtml(data.chargeAmount ?? "")}" oninput="recalcIncidentTotals()">
+                </div>
+                <div>
+                    <label>Incident Tag / Note</label>
+                    <input class="inc-note" type="text" placeholder="e.g. POS transaction #1" value="${escapeHtml(data.note || "")}">
+                </div>
+                <div>
+                    <button class="btn-sm btn-danger" type="button" onclick="removeIncidentRow('${rowId}')">Delete</button>
+                </div>
+            `;
+
+            container.appendChild(row);
+            recalcIncidentTotals();
+        }
+
+        function removeIncidentRow(rowId) {
+            const container = document.getElementById("incidents-list");
+            const rows = container.querySelectorAll(".incident-row");
+            if (rows.length <= 1) {
+                const statusEl = document.getElementById("form-status");
+                statusEl.style.color = "var(--warn)";
+                statusEl.textContent = "At least one incident/charge row is required.";
+                return;
+            }
+            const target = document.getElementById(rowId);
+            if (target) target.remove();
+            recalcIncidentTotals();
+        }
+
+        function collectIncidents() {
+            const rows = Array.from(document.querySelectorAll("#incidents-list .incident-row"));
+            return rows.map((row) => ({
+                incidentDate: row.querySelector(".inc-date").value,
+                cardType: row.querySelector(".inc-card").value,
+                chargeAmount: parseFloat(row.querySelector(".inc-amount").value) || 0,
+                note: row.querySelector(".inc-note").value.trim()
+            }));
+        }
+
+        function recalcIncidentTotals() {
+            const rows = Array.from(document.querySelectorAll("#incidents-list .incident-row"));
+            let sum = 0;
+            rows.forEach((row) => {
+                const val = parseFloat(row.querySelector(".inc-amount").value);
+                if (Number.isFinite(val)) sum += val;
+            });
+            document.getElementById("incident-count-label").textContent = String(rows.length);
+            document.getElementById("total-charges-label").textContent = formatMoney(sum);
+        }
 
         function getCustomers() {
             try {
@@ -592,7 +812,9 @@
 
         function formatMoney(val) {
             const num = parseFloat(val);
-            return Number.isFinite(num) ? `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00";
+            return Number.isFinite(num)
+                ? `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : "$0.00";
         }
 
         function updateCoverageHint() {
@@ -607,7 +829,7 @@
             const remaining = MAX_INSURED_CAP - clamped;
             if (rawVal > MAX_INSURED_CAP) {
                 hint.style.color = "var(--warn)";
-                hint.textContent = `Exceeds $250,000.00 limit — capped at $250,000.00 ($0.00 remaining)`;
+                hint.textContent = "Exceeds $250,000.00 limit — capped at $250,000.00 ($0.00 remaining)";
             } else {
                 hint.style.color = "var(--text-sub)";
                 hint.textContent = `Insured: ${formatMoney(clamped)} / $250,000.00 (Remaining cap: ${formatMoney(remaining)})`;
@@ -624,40 +846,54 @@
                 return;
             }
 
-            tbody.innerHTML = list.map((c) => `
-                <tr>
-                    <td><strong>${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)}</strong></td>
-                    <td class="mono-cell">
-                        <div>${escapeHtml(c.phone)}</div>
-                        <span class="sub-muted">${escapeHtml(c.email)}</span>
-                        <span class="sub-muted" style="font-family: inherit;">${escapeHtml(c.address)}</span>
-                    </td>
-                    <td class="mono-cell">
-                        <div>SSN: ${escapeHtml(c.ssn)}</div>
-                        <span class="sub-muted">DOB: ${escapeHtml(c.dob)}</span>
-                        <span class="sub-muted">MMN: ${escapeHtml(c.mmn)}</span>
-                    </td>
-                    <td class="mono-cell">
-                        <div><strong>${escapeHtml(c.bankName)}</strong></div>
-                        <span class="sub-muted" style="color: var(--accent);">Insured: ${formatMoney(c.insuredAmount)} / $250,000.00</span>
-                    </td>
-                    <td class="mono-cell">
-                        <div>Payment: <strong>${escapeHtml(c.paymentMethod)}</strong> (${escapeHtml(c.cardType)})</div>
-                        <span class="sub-muted">Incident: ${escapeHtml(c.incidentDate)}</span>
-                        <span class="sub-muted" style="color: var(--text-main);">Charges: ${formatMoney(c.chargeAmount)}</span>
-                        ${c.notes ? `<span class="sub-muted" style="font-family: inherit;">${escapeHtml(c.notes)}</span>` : ""}
-                    </td>
-                    <td>
-                        <div class="link-preview">${escapeHtml(c.customLink)}</div>
-                    </td>
-                    <td>
-                        <div class="row-actions">
-                            <button class="btn btn-sm" type="button" onclick="copyText('${escapeHtml(c.customLink)}')">Copy</button>
-                            <button class="btn btn-sm" type="button" onclick="deleteCustomer('${escapeHtml(c.id)}')">Remove</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join("");
+            tbody.innerHTML = list.map((c) => {
+                const incidents = Array.isArray(c.incidents) ? c.incidents : [];
+                const totalCharges = incidents.reduce((acc, item) => acc + (parseFloat(item.chargeAmount) || 0), 0);
+                const incidentsHtml = incidents.map((inc, idx) => `
+                    <div class="incident-item">
+                        <strong>#${idx + 1}</strong> &middot; ${escapeHtml(inc.incidentDate)} &middot; <strong>${escapeHtml(inc.cardType)}</strong> &middot; <span style="color: var(--accent);">${formatMoney(inc.chargeAmount)}</span>
+                        ${inc.note ? `<span class="sub-muted" style="margin-top: 0.1rem;">${escapeHtml(inc.note)}</span>` : ""}
+                    </div>
+                `).join("");
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="mono-cell" style="color: var(--accent); font-weight: 700;">${escapeHtml(c.caseNumber)}</div>
+                            <strong>${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)}</strong>
+                        </td>
+                        <td class="mono-cell">
+                            <div>${escapeHtml(c.phone)}</div>
+                            <span class="sub-muted">${escapeHtml(c.email)}</span>
+                            <span class="sub-muted" style="font-family: inherit;">${escapeHtml(c.address)}</span>
+                        </td>
+                        <td class="mono-cell">
+                            <div>SSN: ${escapeHtml(c.ssn)}</div>
+                            <span class="sub-muted">DOB: ${escapeHtml(c.dob)}</span>
+                            <span class="sub-muted">MMN: ${escapeHtml(c.mmn)}</span>
+                        </td>
+                        <td class="mono-cell">
+                            <div><strong>${escapeHtml(c.bankName)}</strong></div>
+                            <span class="sub-muted" style="color: var(--accent);">Insured: ${formatMoney(c.insuredAmount)} / $250,000.00</span>
+                            <span class="sub-muted">Payment: ${escapeHtml(c.paymentMethod)}</span>
+                        </td>
+                        <td>
+                            ${incidentsHtml || '<span class="sub-muted">None</span>'}
+                            <div class="mono-cell" style="margin-top: 0.35rem;">Total: <strong>${formatMoney(totalCharges)}</strong></div>
+                            ${c.notes ? `<span class="sub-muted">${escapeHtml(c.notes)}</span>` : ""}
+                        </td>
+                        <td>
+                            <div class="link-preview">${escapeHtml(c.customLink)}</div>
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="btn-sm" type="button" onclick="copyText('${escapeHtml(c.customLink)}')">Copy</button>
+                                <button class="btn-sm btn-danger" type="button" onclick="deleteCustomer('${escapeHtml(c.id)}')">Remove</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
         }
 
         async function handleCreateCustomer(event) {
@@ -671,6 +907,14 @@
                 return;
             }
 
+            const incidents = collectIncidents();
+            if (!incidents.length) {
+                statusEl.style.color = "var(--err)";
+                statusEl.textContent = "Add at least one incident/charge entry.";
+                return;
+            }
+
+            const rawCase = document.getElementById("case-number").value.trim();
             const firstName = document.getElementById("first-name").value.trim();
             const lastName = document.getElementById("last-name").value.trim();
             const phone = document.getElementById("phone-number").value.trim();
@@ -681,20 +925,23 @@
             const streetAddress = document.getElementById("street-address").value.trim();
             const bankName = document.getElementById("bank-name").value.trim();
             const paymentMethod = document.getElementById("payment-method").value;
-            const cardType = document.getElementById("card-type").value;
-            const incidentDate = document.getElementById("incident-date").value;
-            const chargeAmount = document.getElementById("charge-amount").value;
             const requestedSlug = slugify(document.getElementById("custom-slug").value.trim());
             const notes = document.getElementById("extra-notes").value.trim();
             const agentHandle = sessionStorage.getItem(STORAGE_USER) || "agent";
+            const agentProfile = getAgentProfile();
 
+            const uniqueSuffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+            const caseNumber = rawCase || `CASE-${new Date().getFullYear()}-${uniqueSuffix}`;
             const fallbackSlug = slugify(`${firstName}-${lastName}`) || "cust";
-            const uniqueSuffix = Math.random().toString(36).slice(2, 6);
-            const code = requestedSlug ? `${requestedSlug}-${uniqueSuffix}` : `${fallbackSlug}-${uniqueSuffix}`;
+            const code = requestedSlug
+                ? `${requestedSlug}-${uniqueSuffix.toLowerCase()}`
+                : `${fallbackSlug}-${uniqueSuffix.toLowerCase()}`;
             const customLink = buildCustomLink(code);
+            const totalCharges = incidents.reduce((acc, item) => acc + item.chargeAmount, 0);
 
             const record = {
                 id: code,
+                caseNumber,
                 firstName,
                 lastName,
                 phone,
@@ -706,12 +953,12 @@
                 bankName,
                 insuredAmount: rawInsured,
                 paymentMethod,
-                cardType,
-                incidentDate,
-                chargeAmount,
+                incidents,
+                totalCharges,
                 notes,
                 customLink,
                 createdBy: agentHandle,
+                agentSnapshot: agentProfile,
                 createdAt: new Date().toISOString()
             };
 
@@ -723,6 +970,7 @@
                 try {
                     await _supabase.from("customers").insert([{
                         invite_code: record.id,
+                        case_number: record.caseNumber,
                         first_name: record.firstName,
                         last_name: record.lastName,
                         phone: record.phone,
@@ -734,9 +982,8 @@
                         bank_name: record.bankName,
                         insured_amount: record.insuredAmount,
                         payment_method: record.paymentMethod,
-                        card_type: record.cardType,
-                        incident_date: record.incidentDate,
-                        charge_amount: parseFloat(record.chargeAmount) || 0,
+                        incidents: record.incidents,
+                        total_charges: record.totalCharges,
                         notes: record.notes || null,
                         custom_link: record.customLink,
                         created_by: record.createdBy
@@ -752,9 +999,11 @@
             banner.classList.add("show");
 
             statusEl.style.color = "var(--ok)";
-            statusEl.textContent = "Profile saved and custom link deployed.";
+            statusEl.textContent = `Case ${caseNumber} saved and custom link deployed.`;
 
             event.target.reset();
+            document.getElementById("incidents-list").innerHTML = "";
+            addIncidentRow();
             updateCoverageHint();
             renderCustomers();
         }
@@ -783,6 +1032,8 @@
                 document.getElementById("agent-handle").textContent = "@" + handle.replace(/^@+/, "").toUpperCase();
             }
 
+            renderAgentProfileUI();
+            addIncidentRow();
             updateCoverageHint();
             renderCustomers();
         });
