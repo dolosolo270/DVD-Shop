@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Role Workspace // Hub Entry</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-base: #071120;
+            --bg-surface: #0d1d35;
+            --bg-elevated: #132847;
+            --border-line: #1e3a66;
+            --accent: #38bdf8;
+            --accent-strong: #2563eb;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --ok: #22c55e;
+            --warn: #f59e0b;
+            --err: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-image:
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 45%),
+                linear-gradient(rgba(30, 58, 102, 0.14) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 58, 102, 0.14) 1px, transparent 1px);
+            background-size: auto, 28px 28px, 28px 28px;
+        }
+
+        .top-strip {
+            background: var(--text-main);
+            color: var(--bg-base);
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            padding: 0.4rem 1rem;
+            text-transform: uppercase;
+        }
+
+        /* Access Gate */
+        #auth-gate {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 17, 32, 0.96);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            z-index: 100;
+        }
+
+        #auth-gate.hidden {
+            display: none;
+        }
+
+        .gate-card {
+            width: 100%;
+            max-width: 430px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-top: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 2rem;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+        }
+
+        .eyebrow {
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .gate-card h1 {
+            margin: 0 0 0.6rem 0;
+            font-size: 1.35rem;
+        }
+
+        .gate-card p {
+            margin: 0 0 1.25rem 0;
+            color: var(--text-sub);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .field-label {
+            display: block;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 0.75rem 0.9rem;
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-box:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: opacity 0.15s ease, background 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--text-main);
+            color: var(--bg-base);
+        }
+
+        .btn-primary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-secondary {
+            width: auto;
+            padding: 0.45rem 0.8rem;
+            font-size: 0.75rem;
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-line);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+        }
+
+        #gate-msg {
+            margin-top: 0.85rem;
+            font-family: monospace;
+            font-size: 0.78rem;
+            min-height: 1.1rem;
+            color: var(--err);
+        }
+
+        /* Hub Shell */
+        #hub-shell {
+            display: none;
+        }
+
+        #hub-shell.active {
+            display: block;
+        }
+
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-line);
+            padding: 0.95rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .brand {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 1.25rem;
+            margin: 0;
+            padding: 0;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-family: monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: var(--accent);
+        }
+
+        .role-only {
+            display: none;
+        }
+
+        .role-only.visible {
+            display: list-item;
+        }
+
+        .wrap {
+            max-width: 1020px;
+            margin: 2.25rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .banner-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            padding: 1.75rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .banner-card h2 {
+            margin: 0.25rem 0 0.5rem 0;
+            font-size: 1.4rem;
+        }
+
+        .banner-card p {
+            margin: 0;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            max-width: 620px;
+            line-height: 1.55;
+        }
+
+        .session-meta {
+            font-family: monospace;
+            font-size: 0.78rem;
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            line-height: 1.7;
+        }
+
+        .role-pill {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.15rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .module-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            padding: 1.35rem;
+            text-decoration: none;
+            color: var(--text-main);
+            display: none;
+            transition: border-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .module-card.visible {
+            display: block;
+        }
+
+        .module-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .module-card h3 {
+            margin: 0.35rem 0 0.45rem 0;
+            font-size: 1.05rem;
+        }
+
+        .module-card p {
+            margin: 0;
+            color: var(--text-sub);
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .invite-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            padding: 1.35rem 1.75rem;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .invite-panel.visible {
+            display: flex;
+        }
+
+        .invite-url {
+            color: var(--accent);
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-strip">Multi-Role Workspace // Clearance Gate Active</div>
+
+    <!-- VERIFICATION GATE -->
+    <section id="auth-gate" aria-label="Workspace Verification">
+        <div class="gate-card">
+            <div class="eyebrow">Step 01 // Subscriber Check</div>
+            <h1>Workspace Access</h1>
+            <p>Enter your Telegram handle to verify channel access and load your role workspace.</p>
+
+            <label class="field-label" for="tg-input">Telegram Handle</label>
+            <input id="tg-input" class="input-box" type="text" placeholder="@handle" autocomplete="off">
+
+            <button class="btn btn-primary" type="button" onclick="verifyAccess()">Verify &amp; Enter</button>
+            <div id="gate-msg"></div>
+        </div>
+    </section>
+
+    <!-- MAIN HUB -->
+    <div id="hub-shell">
+        <header>
+            <a class="brand" href="index.html">WORKSPACE // HUB</a>
+            <nav aria-label="Primary">
+                <ul id="nav-list">
+                    <li><a class="active" href="index.html">Hub</a></li>
+                    <li class="role-only" data-roles="agent"><a href="dashboard.html">Dashboard</a></li>
+                    <li class="role-only" data-roles="agent,customer"><a href="customers.html">Customers</a></li>
+                    <li class="role-only" data-roles="agent"><a href="topup.html">Top-Up</a></li>
+                    <li class="role-only" data-roles="agent,customer"><a href="support.html">Support</a></li>
+                    <li class="role-only" data-roles="agent"><a href="admin.html">Admin</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="wrap">
+            <section class="banner-card">
+                <div>
+                    <div class="eyebrow">Active Workspace Hub</div>
+                    <h2 id="welcome-title">Role Workspace Ready</h2>
+                    <p id="welcome-desc">
+                        Your session is active. Use the modules below to move into your assigned pages as we build them one by one.
+                    </p>
+                </div>
+
+                <div class="session-meta">
+                    <div>USER: <strong id="meta-user">@GUEST</strong></div>
+                    <div>ROLE: <span id="meta-role" class="role-pill">AGENT</span></div>
+                    <div style="margin-top: 0.4rem;">
+                        <button class="btn btn-secondary" type="button" onclick="lockSession()">Lock Session</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid" aria-label="Workspace Pages">
+                <a class="module-card" data-roles="agent" href="dashboard.html">
+                    <div class="eyebrow">Page 02</div>
+                    <h3>Agent Dashboard</h3>
+                    <p>Operational overview, active tasks, and account metrics for agents.</p>
+                </a>
+
+                <a class="module-card" data-roles="agent,customer" href="customers.html">
+                    <div class="eyebrow">Page 03</div>
+                    <h3>Customer Portal</h3>
+                    <p>Customer view and records accessible to agents and invite-linked customers.</p>
+                </a>
+
+                <a class="module-card" data-roles="agent" href="topup.html">
+                    <div class="eyebrow">Page 04</div>
+                    <h3>Agent Top-Up</h3>
+                    <p>Balance funding and deposit requests restricted to agent accounts.</p>
+                </a>
+
+                <a class="module-card" data-roles="agent,customer" href="support.html">
+                    <div class="eyebrow">Page 05</div>
+                    <h3>Support Desk</h3>
+                    <p>Submit and track requests across your active workspace role.</p>
+                </a>
+
+                <a class="module-card" data-roles="agent" href="admin.html">
+                    <div class="eyebrow">Page 06</div>
+                    <h3>Admin Controls</h3>
+                    <p>System management, role oversight, and operational settings.</p>
+                </a>
+            </section>
+
+            <section id="agent-invite-box" class="invite-panel">
+                <div>
+                    <div class="eyebrow" style="margin-bottom: 0.25rem;">Customer Invite Link</div>
+                    <span id="customer-invite-url" class="invite-url"></span>
+                </div>
+                <button class="btn btn-secondary" type="button" onclick="copyInvite()">Copy Invite</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        const STORAGE_USER = "ws_user_handle";
+        const STORAGE_ROLE = "ws_active_role";
+
+        function resolveRole() {
+            const params = new URLSearchParams(window.location.search);
+            const paramRole = (params.get("role") || params.get("ref") || "").toLowerCase();
+
+            if (paramRole === "customer") {
+                sessionStorage.setItem(STORAGE_ROLE, "customer");
+                return "customer";
+            }
+            if (paramRole === "agent") {
+                sessionStorage.setItem(STORAGE_ROLE, "agent");
+                return "agent";
+            }
+
+            return sessionStorage.getItem(STORAGE_ROLE) || "agent";
+        }
+
+        function applyRoleVisibility(role) {
+            document.querySelectorAll(".role-only, .module-card").forEach((el) => {
+                const allowed = (el.getAttribute("data-roles") || "")
+                    .split(",")
+                    .map((r) => r.trim())
+                    .filter(Boolean);
+
+                if (allowed.includes(role)) {
+                    el.classList.add("visible");
+                } else {
+                    el.classList.remove("visible");
+                }
+            });
+
+            const inviteBox = document.getElementById("agent-invite-box");
+            if (role === "agent") {
+                inviteBox.classList.add("visible");
+            } else {
+                inviteBox.classList.remove("visible");
+            }
+        }
+
+        function renderHub(handle, role) {
+            const cleanHandle = "@" + handle.replace(/^@+/, "").toUpperCase();
+            document.getElementById("meta-user").textContent = cleanHandle;
+            document.getElementById("meta-role").textContent = role.toUpperCase();
+            document.getElementById("welcome-title").textContent =
+                role === "customer" ? "Customer Workspace Hub" : "Agent Command Hub";
+            document.getElementById("welcome-desc").textContent =
+                role === "customer"
+                    ? "You entered through an invite link. Only customer and support modules are shown."
+                    : "Agent hub active. Manage customers, funding, support, and system pages as each file is added.";
+
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?role=customer`;
+            document.getElementById("customer-invite-url").textContent = inviteUrl;
+
+            applyRoleVisibility(role);
+
+            document.getElementById("auth-gate").classList.add("hidden");
+            document.getElementById("hub-shell").classList.add("active");
+        }
+
+        function verifyAccess() {
+            const raw = document.getElementById("tg-input").value.trim().replace(/^@+/, "");
+            const msg = document.getElementById("gate-msg");
+
+            if (!raw) {
+                msg.textContent = "Please enter a Telegram handle first.";
+                return;
+            }
+
+            msg.style.color = "var(--accent)";
+            msg.textContent = "Verifying channel access...";
+
+            const role = resolveRole();
+            setTimeout(() => {
+                sessionStorage.setItem(STORAGE_USER, raw);
+                msg.textContent = "";
+                renderHub(raw, role);
+            }, 350);
+        }
+
+        function lockSession() {
+            sessionStorage.removeItem(STORAGE_USER);
+            document.getElementById("hub-shell").classList.remove("active");
+            document.getElementById("auth-gate").classList.remove("hidden");
+            document.getElementById("tg-input").value = "";
+            document.getElementById("gate-msg").textContent = "";
+        }
+
+        function copyInvite() {
+            const url = document.getElementById("customer-invite-url").textContent;
+            if (navigator.clipboard && url) {
+                navigator.clipboard.writeText(url);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const role = resolveRole();
+            const savedUser = sessionStorage.getItem(STORAGE_USER);
+            if (savedUser) {
+                renderHub(savedUser, role);
+            }
+        });
+    </script>
+</body>
+</html>
