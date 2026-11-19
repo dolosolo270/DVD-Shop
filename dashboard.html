@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Role Workspace // Agent Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-base: #071120;
+            --bg-surface: #0d1d35;
+            --bg-elevated: #132847;
+            --border-line: #1e3a66;
+            --accent: #38bdf8;
+            --accent-strong: #2563eb;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --ok: #22c55e;
+            --warn: #f59e0b;
+            --err: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-image:
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 45%),
+                linear-gradient(rgba(30, 58, 102, 0.14) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 58, 102, 0.14) 1px, transparent 1px);
+            background-size: auto, 28px 28px, 28px 28px;
+        }
+
+        .top-strip {
+            background: var(--text-main);
+            color: var(--bg-base);
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            padding: 0.4rem 1rem;
+            text-transform: uppercase;
+        }
+
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-line);
+            padding: 0.95rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .brand {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 1.25rem;
+            margin: 0;
+            padding: 0;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-family: monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: var(--accent);
+        }
+
+        .wrap {
+            max-width: 1160px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .top-bar {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            padding: 1.35rem 1.6rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .eyebrow {
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .top-bar h1 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            flex-wrap: wrap;
+            font-family: monospace;
+            font-size: 0.78rem;
+        }
+
+        .pill {
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            padding: 0.35rem 0.7rem;
+            border-radius: 4px;
+        }
+
+        .pill strong {
+            color: var(--accent);
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            padding: 1.6rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel h2 {
+            margin: 0 0 0.35rem 0;
+            font-size: 1.15rem;
+        }
+
+        .panel-sub {
+            margin: 0 0 1.25rem 0;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+        }
+
+        .section-label {
+            grid-column: 1 / -1;
+            font-family: monospace;
+            font-size: 0.74rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-line);
+            margin-top: 0.25rem;
+        }
+
+        .section-label:first-child {
+            border-top: none;
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .field-full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-family: monospace;
+            font-size: 0.73rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.7rem 0.85rem;
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.88rem;
+        }
+
+        input.mono,
+        select.mono {
+            font-family: monospace;
+            font-size: 0.84rem;
+        }
+
+        textarea {
+            min-height: 76px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .field-hint {
+            display: block;
+            margin-top: 0.3rem;
+            font-family: monospace;
+            font-size: 0.71rem;
+            color: var(--text-sub);
+        }
+
+        .actions {
+            margin-top: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.72rem 1.15rem;
+            border: none;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--text-main);
+            color: var(--bg-base);
+        }
+
+        .btn-primary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.7rem;
+            font-size: 0.72rem;
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-line);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-sm:hover {
+            border-color: var(--accent);
+        }
+
+        #form-status {
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .deployed-box {
+            margin-top: 1.15rem;
+            background: var(--bg-base);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            padding: 0.9rem 1rem;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .deployed-box.show {
+            display: flex;
+        }
+
+        .deployed-link {
+            color: var(--accent);
+            word-break: break-all;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 0.72rem 0.6rem;
+            border-bottom: 1px solid var(--border-line);
+            vertical-align: top;
+        }
+
+        th {
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .sub-muted {
+            display: block;
+            color: var(--text-sub);
+            font-size: 0.75rem;
+            margin-top: 0.15rem;
+        }
+
+        .mono-cell {
+            font-family: monospace;
+            font-size: 0.77rem;
+        }
+
+        .link-preview {
+            font-family: monospace;
+            font-size: 0.73rem;
+            color: var(--accent);
+            word-break: break-all;
+            max-width: 230px;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-strip">Agent Workspace // Customer Intake &amp; Custom Link Deployment</div>
+
+    <header>
+        <a class="brand" href="index.html">WORKSPACE // HUB</a>
+        <nav aria-label="Primary">
+            <ul>
+                <li><a href="index.html">Hub</a></li>
+                <li><a class="active" href="dashboard.html">Dashboard</a></li>
+                <li><a href="customers.html">Customers</a></li>
+                <li><a href="topup.html">Top-Up</a></li>
+                <li><a href="support.html">Support</a></li>
+                <li><a href="admin.html">Admin</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="wrap">
+        <section class="top-bar">
+            <div>
+                <div class="eyebrow">Page 02 // Agent Operations</div>
+                <h1>Agent Dashboard</h1>
+            </div>
+            <div class="badge-row">
+                <span class="pill">AGENT: <strong id="agent-handle">@AGENT</strong></span>
+                <span class="pill">PROFILES: <strong id="customer-count">0</strong></span>
+            </div>
+        </section>
+
+        <!-- CREATE CUSTOMER PROFILE & DEPLOY CUSTOM LINK -->
+        <section class="panel" aria-label="Create Customer Profile">
+            <h2>Create Customer Profile &amp; Deploy Link</h2>
+            <p class="panel-sub">
+                Complete the customer's profile, banking/coverage details, and incident info to generate and deploy their custom link.
+            </p>
+
+            <form id="customer-form" onsubmit="handleCreateCustomer(event)">
+                <div class="form-grid">
+                    <div class="section-label">Identity &amp; Contact</div>
+
+                    <div>
+                        <label for="first-name">First Name *</label>
+                        <input id="first-name" type="text" required placeholder="Jordan">
+                    </div>
+
+                    <div>
+                        <label for="last-name">Last Name *</label>
+                        <input id="last-name" type="text" required placeholder="Taylor">
+                    </div>
+
+                    <div>
+                        <label for="phone-number">Phone Number *</label>
+                        <input id="phone-number" class="mono" type="tel" required placeholder="+1 555-014-8920">
+                    </div>
+
+                    <div>
+                        <label for="email-address">Email Address *</label>
+                        <input id="email-address" class="mono" type="email" required placeholder="jordan.taylor@example.com">
+                    </div>
+
+                    <div>
+                        <label for="ssn">SSN *</label>
+                        <input id="ssn" class="mono" type="text" required inputmode="numeric" placeholder="123-45-6789" autocomplete="off">
+                    </div>
+
+                    <div>
+                        <label for="dob">Date of Birth (DOB) *</label>
+                        <input id="dob" class="mono" type="date" required>
+                    </div>
+
+                    <div>
+                        <label for="mmn">Mother's Maiden Name (MMN) *</label>
+                        <input id="mmn" type="text" required placeholder="Alvarez" autocomplete="off">
+                    </div>
+
+                    <div class="field-full">
+                        <label for="street-address">Address *</label>
+                        <input id="street-address" type="text" required placeholder="420 Harbor View Dr, Apt 4B, Portsmouth, VA 23704">
+                    </div>
+
+                    <div class="section-label">Bank, Coverage &amp; Payment</div>
+
+                    <div>
+                        <label for="bank-name">Bank Name *</label>
+                        <input id="bank-name" type="text" required placeholder="Navy Federal Credit Union">
+                    </div>
+
+                    <div>
+                        <label for="insured-amount">Amount Insured (Out of $250,000) *</label>
+                        <input id="insured-amount" class="mono" type="number" step="0.01" min="0" max="250000" required placeholder="250000.00" oninput="updateCoverageHint()">
+                        <span id="coverage-hint" class="field-hint">Max cap: $250,000.00 (Remaining cap: $250,000.00)</span>
+                    </div>
+
+                    <div>
+                        <label for="payment-method">Customer Payment Method *</label>
+                        <select id="payment-method" class="mono" required>
+                            <option value="" disabled selected>Select payment method</option>
+                            <option value="Bank Transfer / ACH">Bank Transfer / ACH</option>
+                            <option value="Debit Card">Debit Card</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Wire Transfer">Wire Transfer</option>
+                            <option value="Bitcoin (BTC)">Bitcoin (BTC)</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="card-type">Debit or Credit *</label>
+                        <select id="card-type" class="mono" required>
+                            <option value="" disabled selected>Select card type</option>
+                            <option value="Debit">Debit</option>
+                            <option value="Credit">Credit</option>
+                        </select>
+                    </div>
+
+                    <div class="section-label">Incident &amp; Charges</div>
+
+                    <div>
+                        <label for="incident-date">Date of Incident *</label>
+                        <input id="incident-date" class="mono" type="date" required>
+                    </div>
+
+                    <div>
+                        <label for="charge-amount">Amount of Charges (USD) *</label>
+                        <input id="charge-amount" class="mono" type="number" step="0.01" min="0" required placeholder="250.00">
+                    </div>
+
+                    <div>
+                        <label for="custom-slug">Custom Link Slug (Optional)</label>
+                        <input id="custom-slug" class="mono" type="text" placeholder="e.g. jt-case-04">
+                    </div>
+
+                    <div class="field-full">
+                        <label for="extra-notes">Additional Details / Notes</label>
+                        <textarea id="extra-notes" placeholder="Merchant details, reference numbers, or extra notes..."></textarea>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit">Create Profile &amp; Deploy Link</button>
+                    <span id="form-status"></span>
+                </div>
+            </form>
+
+            <div id="deployed-banner" class="deployed-box">
+                <div>
+                    <div style="color: var(--ok); font-weight: 700; margin-bottom: 0.25rem;">CUSTOM LINK DEPLOYED</div>
+                    <span id="deployed-url" class="deployed-link"></span>
+                </div>
+                <div class="row-actions">
+                    <button class="btn btn-sm" type="button" onclick="copyText(document.getElementById('deployed-url').textContent)">Copy Link</button>
+                    <a id="deployed-open" class="btn btn-sm" href="#" target="_blank" rel="noopener">Open Link</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEPLOYED CUSTOMER PROFILES -->
+        <section class="panel" aria-label="Deployed Customer Profiles">
+            <h2>Deployed Customer Profiles</h2>
+            <p class="panel-sub">
+                Profiles created in this workspace along with their custom customer links.
+            </p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Contact &amp; Address</th>
+                            <th>SSN / DOB / MMN</th>
+                            <th>Bank &amp; $250k Coverage</th>
+                            <th>Payment, Incident &amp; Charges</th>
+                            <th>Custom Link</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-tbody">
+                        <tr>
+                            <td colspan="7" style="color: var(--text-sub);">No customer profiles created yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        const STORAGE_USER = "ws_user_handle";
+        const STORAGE_ROLE = "ws_active_role";
+        const STORAGE_CUSTOMERS = "ws_agent_customers";
+        const MAX_INSURED_CAP = 250000;
+
+        function getCustomers() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_CUSTOMERS) || "[]");
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function saveCustomers(list) {
+            localStorage.setItem(STORAGE_CUSTOMERS, JSON.stringify(list));
+        }
+
+        function slugify(value) {
+            return (value || "")
+                .toLowerCase()
+                .replace(/[^a-z0-9-]+/g, "-")
+                .replace(/^-+|-+$/g, "")
+                .slice(0, 32);
+        }
+
+        function buildCustomLink(code) {
+            const base = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/index.html");
+            return `${base}?role=customer&cid=${encodeURIComponent(code)}`;
+        }
+
+        function escapeHtml(str) {
+            return String(str || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatMoney(val) {
+            const num = parseFloat(val);
+            return Number.isFinite(num) ? `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00";
+        }
+
+        function updateCoverageHint() {
+            const rawVal = parseFloat(document.getElementById("insured-amount").value);
+            const hint = document.getElementById("coverage-hint");
+            if (!Number.isFinite(rawVal)) {
+                hint.style.color = "var(--text-sub)";
+                hint.textContent = "Max cap: $250,000.00 (Remaining cap: $250,000.00)";
+                return;
+            }
+            const clamped = Math.min(Math.max(rawVal, 0), MAX_INSURED_CAP);
+            const remaining = MAX_INSURED_CAP - clamped;
+            if (rawVal > MAX_INSURED_CAP) {
+                hint.style.color = "var(--warn)";
+                hint.textContent = `Exceeds $250,000.00 limit — capped at $250,000.00 ($0.00 remaining)`;
+            } else {
+                hint.style.color = "var(--text-sub)";
+                hint.textContent = `Insured: ${formatMoney(clamped)} / $250,000.00 (Remaining cap: ${formatMoney(remaining)})`;
+            }
+        }
+
+        function renderCustomers() {
+            const list = getCustomers();
+            const tbody = document.getElementById("customers-tbody");
+            document.getElementById("customer-count").textContent = String(list.length);
+
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="color: var(--text-sub);">No customer profiles created yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map((c) => `
+                <tr>
+                    <td><strong>${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)}</strong></td>
+                    <td class="mono-cell">
+                        <div>${escapeHtml(c.phone)}</div>
+                        <span class="sub-muted">${escapeHtml(c.email)}</span>
+                        <span class="sub-muted" style="font-family: inherit;">${escapeHtml(c.address)}</span>
+                    </td>
+                    <td class="mono-cell">
+                        <div>SSN: ${escapeHtml(c.ssn)}</div>
+                        <span class="sub-muted">DOB: ${escapeHtml(c.dob)}</span>
+                        <span class="sub-muted">MMN: ${escapeHtml(c.mmn)}</span>
+                    </td>
+                    <td class="mono-cell">
+                        <div><strong>${escapeHtml(c.bankName)}</strong></div>
+                        <span class="sub-muted" style="color: var(--accent);">Insured: ${formatMoney(c.insuredAmount)} / $250,000.00</span>
+                    </td>
+                    <td class="mono-cell">
+                        <div>Payment: <strong>${escapeHtml(c.paymentMethod)}</strong> (${escapeHtml(c.cardType)})</div>
+                        <span class="sub-muted">Incident: ${escapeHtml(c.incidentDate)}</span>
+                        <span class="sub-muted" style="color: var(--text-main);">Charges: ${formatMoney(c.chargeAmount)}</span>
+                        ${c.notes ? `<span class="sub-muted" style="font-family: inherit;">${escapeHtml(c.notes)}</span>` : ""}
+                    </td>
+                    <td>
+                        <div class="link-preview">${escapeHtml(c.customLink)}</div>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="btn btn-sm" type="button" onclick="copyText('${escapeHtml(c.customLink)}')">Copy</button>
+                            <button class="btn btn-sm" type="button" onclick="deleteCustomer('${escapeHtml(c.id)}')">Remove</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        async function handleCreateCustomer(event) {
+            event.preventDefault();
+
+            const statusEl = document.getElementById("form-status");
+            const rawInsured = parseFloat(document.getElementById("insured-amount").value);
+            if (!Number.isFinite(rawInsured) || rawInsured < 0 || rawInsured > MAX_INSURED_CAP) {
+                statusEl.style.color = "var(--err)";
+                statusEl.textContent = "Amount insured must be between $0.00 and $250,000.00.";
+                return;
+            }
+
+            const firstName = document.getElementById("first-name").value.trim();
+            const lastName = document.getElementById("last-name").value.trim();
+            const phone = document.getElementById("phone-number").value.trim();
+            const email = document.getElementById("email-address").value.trim();
+            const ssn = document.getElementById("ssn").value.trim();
+            const dob = document.getElementById("dob").value;
+            const mmn = document.getElementById("mmn").value.trim();
+            const streetAddress = document.getElementById("street-address").value.trim();
+            const bankName = document.getElementById("bank-name").value.trim();
+            const paymentMethod = document.getElementById("payment-method").value;
+            const cardType = document.getElementById("card-type").value;
+            const incidentDate = document.getElementById("incident-date").value;
+            const chargeAmount = document.getElementById("charge-amount").value;
+            const requestedSlug = slugify(document.getElementById("custom-slug").value.trim());
+            const notes = document.getElementById("extra-notes").value.trim();
+            const agentHandle = sessionStorage.getItem(STORAGE_USER) || "agent";
+
+            const fallbackSlug = slugify(`${firstName}-${lastName}`) || "cust";
+            const uniqueSuffix = Math.random().toString(36).slice(2, 6);
+            const code = requestedSlug ? `${requestedSlug}-${uniqueSuffix}` : `${fallbackSlug}-${uniqueSuffix}`;
+            const customLink = buildCustomLink(code);
+
+            const record = {
+                id: code,
+                firstName,
+                lastName,
+                phone,
+                email,
+                ssn,
+                dob,
+                mmn,
+                address: streetAddress,
+                bankName,
+                insuredAmount: rawInsured,
+                paymentMethod,
+                cardType,
+                incidentDate,
+                chargeAmount,
+                notes,
+                customLink,
+                createdBy: agentHandle,
+                createdAt: new Date().toISOString()
+            };
+
+            const existing = getCustomers();
+            existing.unshift(record);
+            saveCustomers(existing);
+
+            if (typeof _supabase !== "undefined" && _supabase) {
+                try {
+                    await _supabase.from("customers").insert([{
+                        invite_code: record.id,
+                        first_name: record.firstName,
+                        last_name: record.lastName,
+                        phone: record.phone,
+                        email: record.email,
+                        ssn: record.ssn,
+                        dob: record.dob,
+                        mmn: record.mmn,
+                        address: record.address,
+                        bank_name: record.bankName,
+                        insured_amount: record.insuredAmount,
+                        payment_method: record.paymentMethod,
+                        card_type: record.cardType,
+                        incident_date: record.incidentDate,
+                        charge_amount: parseFloat(record.chargeAmount) || 0,
+                        notes: record.notes || null,
+                        custom_link: record.customLink,
+                        created_by: record.createdBy
+                    }]);
+                } catch (_) {
+                    // Local storage remains active even if table/columns aren't created yet
+                }
+            }
+
+            const banner = document.getElementById("deployed-banner");
+            document.getElementById("deployed-url").textContent = customLink;
+            document.getElementById("deployed-open").href = customLink;
+            banner.classList.add("show");
+
+            statusEl.style.color = "var(--ok)";
+            statusEl.textContent = "Profile saved and custom link deployed.";
+
+            event.target.reset();
+            updateCoverageHint();
+            renderCustomers();
+        }
+
+        function deleteCustomer(id) {
+            const next = getCustomers().filter((item) => item.id !== id);
+            saveCustomers(next);
+            renderCustomers();
+        }
+
+        function copyText(text) {
+            if (navigator.clipboard && text) {
+                navigator.clipboard.writeText(text);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const role = sessionStorage.getItem(STORAGE_ROLE);
+            if (role === "customer") {
+                window.location.href = "index.html?role=customer";
+                return;
+            }
+
+            const handle = sessionStorage.getItem(STORAGE_USER);
+            if (handle) {
+                document.getElementById("agent-handle").textContent = "@" + handle.replace(/^@+/, "").toUpperCase();
+            }
+
+            updateCoverageHint();
+            renderCustomers();
+        });
+    </script>
+</body>
+</html>
