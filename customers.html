@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Role Workspace // Customer Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-base: #071120;
+            --bg-surface: #0d1d35;
+            --bg-elevated: #132847;
+            --border-line: #1e3a66;
+            --accent: #38bdf8;
+            --accent-strong: #2563eb;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --ok: #22c55e;
+            --warn: #f59e0b;
+            --err: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-image:
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 45%),
+                linear-gradient(rgba(30, 58, 102, 0.14) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 58, 102, 0.14) 1px, transparent 1px);
+            background-size: auto, 28px 28px, 28px 28px;
+        }
+
+        .top-strip {
+            background: var(--text-main);
+            color: var(--bg-base);
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            padding: 0.4rem 1rem;
+            text-transform: uppercase;
+        }
+
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-line);
+            padding: 0.95rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .brand {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 1.25rem;
+            margin: 0;
+            padding: 0;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-family: monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: var(--accent);
+        }
+
+        .role-only {
+            display: none;
+        }
+
+        .role-only.visible {
+            display: list-item;
+        }
+
+        .wrap {
+            max-width: 1120px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .top-bar {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            padding: 1.35rem 1.6rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .eyebrow {
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .top-bar h1 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            flex-wrap: wrap;
+            font-family: monospace;
+            font-size: 0.78rem;
+        }
+
+        .pill {
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            padding: 0.35rem 0.7rem;
+            border-radius: 4px;
+        }
+
+        .pill strong {
+            color: var(--accent);
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            padding: 1.6rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel h2 {
+            margin: 0 0 0.35rem 0;
+            font-size: 1.15rem;
+        }
+
+        .panel-sub {
+            margin: 0 0 1.25rem 0;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+        }
+
+        .lookup-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .lookup-row input {
+            flex: 1 1 240px;
+            padding: 0.7rem 0.85rem;
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .lookup-row input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            padding: 0.7rem 1.1rem;
+            border: none;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--text-main);
+            color: var(--bg-base);
+        }
+
+        .btn-primary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-sm {
+            padding: 0.42rem 0.72rem;
+            font-size: 0.72rem;
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-line);
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-sm:hover {
+            border-color: var(--accent);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.9rem;
+            margin-bottom: 1.35rem;
+        }
+
+        .detail-box {
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            border-radius: 4px;
+            padding: 0.85rem 1rem;
+        }
+
+        .detail-box.full {
+            grid-column: 1 / -1;
+        }
+
+        .detail-label {
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 0.3rem;
+        }
+
+        .detail-val {
+            font-family: monospace;
+            font-size: 0.88rem;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        .detail-val.accent {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 0.9rem;
+            margin-bottom: 1.35rem;
+        }
+
+        .stat-card {
+            background: var(--bg-base);
+            border: 1px solid var(--border-line);
+            border-left: 3px solid var(--accent);
+            border-radius: 4px;
+            padding: 0.85rem 1rem;
+        }
+
+        .stat-num {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-top: 0.2rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.83rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 0.72rem 0.65rem;
+            border-bottom: 1px solid var(--border-line);
+            vertical-align: top;
+        }
+
+        th {
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .mono-cell {
+            font-family: monospace;
+            font-size: 0.78rem;
+        }
+
+        .empty-state {
+            background: var(--bg-base);
+            border: 1px dashed var(--border-line);
+            border-radius: 4px;
+            padding: 1.25rem;
+            color: var(--text-sub);
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-strip">Customer Portal // Full Profile &amp; Case Ledger</div>
+
+    <header>
+        <a class="brand" href="index.html">WORKSPACE // HUB</a>
+        <nav aria-label="Primary">
+            <ul>
+                <li><a href="index.html">Hub</a></li>
+                <li class="role-only" data-roles="agent"><a href="dashboard.html">Dashboard</a></li>
+                <li class="role-only visible" data-roles="agent,customer"><a class="active" href="customers.html">Customers</a></li>
+                <li class="role-only" data-roles="agent"><a href="topup.html">Top-Up</a></li>
+                <li class="role-only visible" data-roles="agent,customer"><a href="support.html">Support</a></li>
+                <li class="role-only" data-roles="agent"><a href="admin.html">Admin</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="wrap">
+        <section class="top-bar">
+            <div>
+                <div class="eyebrow">Page 03 // Customer Dossier</div>
+                <h1 id="page-heading">Customer Profile</h1>
+            </div>
+            <div class="badge-row">
+                <span class="pill">ROLE: <strong id="role-pill">CUSTOMER</strong></span>
+                <span class="pill">PROFILE ID: <strong id="cid-pill">NONE</strong></span>
+            </div>
+        </section>
+
+        <!-- FULL CUSTOMER PROFILE VIEW -->
+        <section class="panel" aria-label="Full Customer Profile">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div>
+                    <h2 style="margin: 0;">Complete Profile Record</h2>
+                    <p class="panel-sub" style="margin: 0.25rem 0 0 0;">
+                        Full details prepared for this customer profile, including coverage, payment method, and incident charges.
+                    </p>
+                </div>
+                <button id="show-all-btn" class="btn-sm" type="button" style="display: none;" onclick="clearSelectedCid()">View All Profiles</button>
+            </div>
+
+            <div class="lookup-row">
+                <input id="cid-lookup-input" type="text" placeholder="Enter profile ID / code (e.g. jordan-taylor-a1b2)">
+                <button class="btn btn-primary" type="button" onclick="lookupByInput()">Load Profile</button>
+            </div>
+
+            <div id="profile-container">
+                <div class="empty-state">Loading profile record...</div>
+            </div>
+        </section>
+
+        <!-- AGENT DIRECTORY (SHOWN FOR AGENT ROLE) -->
+        <section id="agent-directory-panel" class="panel" style="display: none;" aria-label="All Agent Customer Profiles">
+            <h2>All Created Customer Profiles</h2>
+            <p class="panel-sub">Select any profile to open its full customer view.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Case #</th>
+                            <th>Customer</th>
+                            <th>Bank &amp; Coverage</th>
+                            <th>Total Charges</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directory-tbody">
+                        <tr>
+                            <td colspan="5" style="color: var(--text-sub);">No profiles available.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        const STORAGE_ROLE = "ws_active_role";
+        const STORAGE_CID = "ws_customer_cid";
+        const STORAGE_CUSTOMERS = "ws_agent_customers";
+        const MAX_INSURED_CAP = 250000;
+
+        function getLocalCustomers() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_CUSTOMERS) || "[]");
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatMoney(val) {
+            const num = parseFloat(val);
+            return Number.isFinite(num)
+                ? `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : "$0.00";
+        }
+
+        function resolveRole() {
+            const params = new URLSearchParams(window.location.search);
+            const paramRole = (params.get("role") || params.get("ref") || "").toLowerCase();
+            if (paramRole === "customer" || paramRole === "agent") {
+                sessionStorage.setItem(STORAGE_ROLE, paramRole);
+                return paramRole;
+            }
+            return sessionStorage.getItem(STORAGE_ROLE) || "customer";
+        }
+
+        function resolveCid() {
+            const params = new URLSearchParams(window.location.search);
+            const fromUrl = (params.get("cid") || "").trim();
+            if (fromUrl) {
+                sessionStorage.setItem(STORAGE_CID, fromUrl);
+                return fromUrl;
+            }
+            return (sessionStorage.getItem(STORAGE_CID) || "").trim();
+        }
+
+        function applyNavForRole(role) {
+            document.getElementById("role-pill").textContent = role.toUpperCase();
+            document.querySelectorAll("header .role-only").forEach((el) => {
+                const allowed = (el.getAttribute("data-roles") || "")
+                    .split(",")
+                    .map((r) => r.trim())
+                    .filter(Boolean);
+                if (allowed.includes(role)) {
+                    el.classList.add("visible");
+                } else {
+                    el.classList.remove("visible");
+                }
+            });
+
+            if (role === "agent") {
+                document.getElementById("agent-directory-panel").style.display = "block";
+            }
+        }
+
+        function normalizeRecord(raw) {
+            if (!raw) return null;
+            const incidents = Array.isArray(raw.incidents)
+                ? raw.incidents
+                : (raw.incidentDate || raw.incident_date || raw.chargeAmount || raw.charge_amount
+                    ? [{
+                        incidentDate: raw.incidentDate || raw.incident_date || "",
+                        cardType: raw.cardType || raw.card_type || "",
+                        chargeAmount: parseFloat(raw.chargeAmount ?? raw.charge_amount) || 0,
+                        note: ""
+                    }]
+                    : []);
+
+            const insuredAmount = parseFloat(raw.insuredAmount ?? raw.insured_amount);
+            const totalCharges = incidents.reduce((sum, item) => sum + (parseFloat(item.chargeAmount) || 0), 0);
+
+            return {
+                id: raw.id || raw.invite_code || "",
+                caseNumber: raw.caseNumber || raw.case_number || "UNASSIGNED",
+                firstName: raw.firstName || raw.first_name || "",
+                lastName: raw.lastName || raw.last_name || "",
+                phone: raw.phone || "",
+                email: raw.email || "",
+                ssn: raw.ssn || "",
+                dob: raw.dob || "",
+                mmn: raw.mmn || "",
+                address: raw.address || "",
+                bankName: raw.bankName || raw.bank_name || "",
+                insuredAmount: Number.isFinite(insuredAmount) ? insuredAmount : 0,
+                paymentMethod: raw.paymentMethod || raw.payment_method || "",
+                incidents,
+                totalCharges,
+                notes: raw.notes || "",
+                createdBy: raw.createdBy || raw.created_by || "",
+                agentSnapshot: raw.agentSnapshot || {}
+            };
+        }
+
+        async function findProfileById(cid) {
+            if (!cid) return null;
+            const localMatch = getLocalCustomers().find((c) => String(c.id).toLowerCase() === cid.toLowerCase());
+            if (localMatch) {
+                return normalizeRecord(localMatch);
+            }
+
+            if (typeof _supabase !== "undefined" && _supabase) {
+                try {
+                    const { data } = await _supabase
+                        .from("customers")
+                        .select("*")
+                        .eq("invite_code", cid)
+                        .maybeSingle();
+                    if (data) {
+                        return normalizeRecord(data);
+                    }
+                } catch (_) {
+                    // Ignore if table or row is not present
+                }
+            }
+            return null;
+        }
+
+        function renderFullProfile(profile, cid) {
+            const container = document.getElementById("profile-container");
+            document.getElementById("cid-pill").textContent = (cid || "NONE").toUpperCase();
+
+            if (!cid) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        No profile link ID detected yet. Open your custom link containing <code>?role=customer&amp;cid=...</code> or enter a profile ID above.
+                    </div>
+                `;
+                return;
+            }
+
+            if (!profile) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        No profile matched ID <strong>${escapeHtml(cid)}</strong> in this browser or database. Check the link or create the profile on the Agent Dashboard.
+                    </div>
+                `;
+                return;
+            }
+
+            const remainingCap = Math.max(0, MAX_INSURED_CAP - profile.insuredAmount);
+            const fullName = `${profile.firstName} ${profile.lastName}`.trim() || "Customer";
+            const agentSnap = profile.agentSnapshot || {};
+            const agentLine = [
+                agentSnap.name ? `Name: ${agentSnap.name}` : "",
+                agentSnap.title ? `Title: ${agentSnap.title}` : "",
+                agentSnap.org ? `Org: ${agentSnap.org}` : "",
+                agentSnap.badge ? `Badge: ${agentSnap.badge}` : "",
+                profile.createdBy ? `Handle: @${profile.createdBy.replace(/^@+/, "")}` : ""
+            ].filter(Boolean).join(" · ");
+
+            const incidentRowsHtml = profile.incidents.length
+                ? profile.incidents.map((inc, idx) => `
+                    <tr>
+                        <td class="mono-cell">#${idx + 1}</td>
+                        <td class="mono-cell">${escapeHtml(inc.incidentDate || "—")}</td>
+                        <td class="mono-cell"><strong>${escapeHtml(inc.cardType || "—")}</strong></td>
+                        <td class="mono-cell" style="color: var(--accent); font-weight: 700;">${formatMoney(inc.chargeAmount)}</td>
+                        <td>${escapeHtml(inc.note || "—")}</td>
+                    </tr>
+                `).join("")
+                : '<tr><td colspan="5" style="color: var(--text-sub);">No incidents listed.</td></tr>';
+
+            container.innerHTML = `
+                <div class="summary-strip">
+                    <div class="stat-card">
+                        <div class="detail-label">Case Number</div>
+                        <div class="stat-num">${escapeHtml(profile.caseNumber)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="detail-label">Insured (Out of $250,000)</div>
+                        <div class="stat-num">${formatMoney(profile.insuredAmount)}</div>
+                        <div class="detail-label" style="margin-top: 0.25rem; margin-bottom: 0;">Remaining Cap: ${formatMoney(remainingCap)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="detail-label">Total Charges (${profile.incidents.length})</div>
+                        <div class="stat-num">${formatMoney(profile.totalCharges)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="detail-label">Payment Method</div>
+                        <div class="stat-num" style="font-size: 0.95rem;">${escapeHtml(profile.paymentMethod || "—")}</div>
+                    </div>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="detail-box">
+                        <div class="detail-label">First Name</div>
+                        <div class="detail-val">${escapeHtml(profile.firstName || "—")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Last Name</div>
+                        <div class="detail-val">${escapeHtml(profile.lastName || "—")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Phone Number</div>
+                        <div class="detail-val">${escapeHtml(profile.phone || "—")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Email Address</div>
+                        <div class="detail-val">${escapeHtml(profile.email || "—")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">SSN</div>
+                        <div class="detail-val accent">${escapeHtml(profile.ssn || "—")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Date of Birth (DOB)</div>
+                        <div class="detail-val">${escapeHtml(profile.dob || "—")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Mother's Maiden Name (MMN)</div>
+                        <div class="detail-val">${escapeHtml(profile.mmn || "—")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Bank Name</div>
+                        <div class="detail-val accent">${escapeHtml(profile.bankName || "—")}</div>
+                    </div>
+                    <div class="detail-box full">
+                        <div class="detail-label">Address</div>
+                        <div class="detail-val">${escapeHtml(profile.address || "—")}</div>
+                    </div>
+                    <div class="detail-box full">
+                        <div class="detail-label">Additional Notes</div>
+                        <div class="detail-val">${escapeHtml(profile.notes || "None")}</div>
+                    </div>
+                    ${agentLine ? `
+                        <div class="detail-box full">
+                            <div class="detail-label">Assigned Agent</div>
+                            <div class="detail-val">${escapeHtml(agentLine)}</div>
+                        </div>
+                    ` : ""}
+                </div>
+
+                <h3 style="margin: 0 0 0.65rem 0; font-size: 1rem;">Incidents &amp; Charges Breakdown (${escapeHtml(fullName)})</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date of Incident</th>
+                                <th>Debit or Credit</th>
+                                <th>Charge Amount</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>${incidentRowsHtml}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderAgentDirectory(selectedCid) {
+            const list = getLocalCustomers().map(normalizeRecord);
+            const tbody = document.getElementById("directory-tbody");
+            const showAllBtn = document.getElementById("show-all-btn");
+
+            if (selectedCid) {
+                showAllBtn.style.display = "inline-block";
+            } else {
+                showAllBtn.style.display = "none";
+            }
+
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="color: var(--text-sub);">No customer profiles created yet on the Agent Dashboard.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map((p) => `
+                <tr>
+                    <td class="mono-cell" style="color: var(--accent); font-weight: 700;">${escapeHtml(p.caseNumber)}</td>
+                    <td><strong>${escapeHtml(`${p.firstName} ${p.lastName}`.trim())}</strong></td>
+                    <td class="mono-cell">${escapeHtml(p.bankName || "—")} · ${formatMoney(p.insuredAmount)} / $250,000.00</td>
+                    <td class="mono-cell">${formatMoney(p.totalCharges)}</td>
+                    <td><button class="btn-sm" type="button" onclick="selectProfile('${escapeHtml(p.id)}')">Open Profile</button></td>
+                </tr>
+            `).join("");
+        }
+
+        async function selectProfile(cid) {
+            const cleanCid = (cid || "").trim();
+            if (cleanCid) {
+                sessionStorage.setItem(STORAGE_CID, cleanCid);
+            } else {
+                sessionStorage.removeItem(STORAGE_CID);
+            }
+            document.getElementById("cid-lookup-input").value = cleanCid;
+            const profile = await findProfileById(cleanCid);
+            renderFullProfile(profile, cleanCid);
+            renderAgentDirectory(cleanCid);
+        }
+
+        function lookupByInput() {
+            const val = document.getElementById("cid-lookup-input").value.trim();
+            selectProfile(val);
+        }
+
+        function clearSelectedCid() {
+            selectProfile("");
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const role = resolveRole();
+            const cid = resolveCid();
+            applyNavForRole(role);
+            document.getElementById("cid-lookup-input").value = cid;
+
+            const profile = await findProfileById(cid);
+            renderFullProfile(profile, cid);
+
+            if (role === "agent") {
+                renderAgentDirectory(cid);
+            }
+        });
+    </script>
+</body>
+</html>
