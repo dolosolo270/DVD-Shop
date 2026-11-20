@@ -461,6 +461,7 @@
             </div>
             <div class="badge-row">
                 <span class="pill">AGENT: <strong id="agent-handle">@AGENT</strong></span>
+                <span class="pill">NAME: <strong id="agent-name-pill">UNSET</strong></span>
                 <span class="pill">BADGE: <strong id="agent-badge-pill">UNSET</strong></span>
                 <span class="pill">ORG: <strong id="agent-org-pill">UNSET</strong></span>
                 <span class="pill">PROFILES: <strong id="customer-count">0</strong></span>
@@ -471,14 +472,14 @@
         <section class="panel" aria-label="Agent Profile Settings">
             <h2>Agent Credentials &amp; Profile</h2>
             <p class="panel-sub">
-                Update your age, title, organization, and badge number anytime. Changes save immediately to your workspace session.
+                Update your name, title, organization, and badge number anytime. Changes save immediately to your workspace session.
             </p>
 
             <form id="agent-profile-form" onsubmit="handleSaveAgentProfile(event)">
                 <div class="form-grid">
                     <div>
-                        <label for="agent-age">Age</label>
-                        <input id="agent-age" class="mono" type="number" min="18" max="120" placeholder="29">
+                        <label for="agent-name">Name</label>
+                        <input id="agent-name" type="text" placeholder="Alex Rivera">
                     </div>
 
                     <div>
@@ -677,11 +678,12 @@
 
         function renderAgentProfileUI() {
             const prof = getAgentProfile();
-            document.getElementById("agent-age").value = prof.age || "";
+            document.getElementById("agent-name").value = prof.name || "";
             document.getElementById("agent-title").value = prof.title || "";
             document.getElementById("agent-org").value = prof.org || "";
             document.getElementById("agent-badge").value = prof.badge || "";
 
+            document.getElementById("agent-name-pill").textContent = (prof.name || "UNSET").toUpperCase();
             document.getElementById("agent-badge-pill").textContent = (prof.badge || "UNSET").toUpperCase();
             document.getElementById("agent-org-pill").textContent = (prof.org || "UNSET").toUpperCase();
         }
@@ -690,7 +692,7 @@
             event.preventDefault();
             const statusEl = document.getElementById("agent-profile-status");
             const profile = {
-                age: document.getElementById("agent-age").value.trim(),
+                name: document.getElementById("agent-name").value.trim(),
                 title: document.getElementById("agent-title").value.trim(),
                 org: document.getElementById("agent-org").value.trim(),
                 badge: document.getElementById("agent-badge").value.trim()
